@@ -1,0 +1,7 @@
+开发板		 - DIY Board
+Clock Source	 - Internal(32MHz)
+CPU Frequency	 - 32MHz
+Variant		 - LGT328P-LQFP32
+EEPROM Size	 - 1KB
+Upload Speed	 - 115200
+
