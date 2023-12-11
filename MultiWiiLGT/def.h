@@ -283,7 +283,14 @@
   #endif
   #if !defined(RCAUXPIN8) 
     #if !defined(MONGOOSE1_0)
-      #define BUZZERPIN_PINMODE          pinMode (8, OUTPUT);
+      /*
+       * 启用 Alarm.
+       * LGT SSOP20 对应 D28/PB7.
+       * Dolphin 2023.12.11
+       * 
+      // */    
+      // #define BUZZERPIN_PINMODE          pinMode (8, OUTPUT);
+      #define BUZZERPIN_PINMODE          pinMode (D28, OUTPUT);
       #if NUMBER_MOTOR >4
         #undef PILOTLAMP
       #endif
@@ -291,8 +298,16 @@
         #define    PL_PIN_ON            PORTB |= 1;
         #define    PL_PIN_OFF           PORTB &= ~1;
       #else
-        #define BUZZERPIN_ON            PORTB |= 1;
-        #define BUZZERPIN_OFF           PORTB &= ~1;
+        /*
+         * 启用 Alarm.
+         * LGT SSOP20 对应 D28/PB7.
+         * Dolphin 2023.12.11
+         * 
+        // */        
+        // #define BUZZERPIN_ON            PORTB |= 1;
+        // #define BUZZERPIN_OFF           PORTB &= ~1;
+        #define BUZZERPIN_ON            PORTB |= (1<<7);
+        #define BUZZERPIN_OFF           PORTB &= ~(1<<7);
       #endif 
     #endif
   #else
