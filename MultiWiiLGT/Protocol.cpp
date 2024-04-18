@@ -273,12 +273,7 @@ void evaluateCommand(uint8_t c) {
       break;
     case MSP_SET_PID:
       mspAck();
-
-      /*
-      * D8 与 LGT 的 pins_arduino.h 宏定义冲突，改为 D_8.
-      * Dolphin 2023.12.06
-      // */      
-      s_struct_w((uint8_t*)&conf.pid[0].P_8,3*PIDITEMS);
+      s_struct_w((uint8_t*)&conf.pid[0].P8,3*PIDITEMS);
       break;
     case MSP_SET_BOX:
       mspAck();
@@ -431,7 +426,7 @@ void evaluateCommand(uint8_t c) {
             break;
         }
       #endif
-      #if defined(FIXEDWING) || defined(HELICOPTER)
+      #if defined(FIXEDWING)
         if(f.PASSTHRU_MODE) tmp |= 1<<BOXPASSTHRU;
       #endif
       #if defined(BUZZER)
@@ -671,11 +666,7 @@ void evaluateCommand(uint8_t c) {
       s_struct((uint8_t*)&conf.rcRate8,7);
       break;
     case MSP_PID:
-      /*
-      * D8 与 LGT 的 pins_arduino.h 宏定义冲突，改为 D_8.
-      * Dolphin 2023.12.06
-      // */
-      s_struct((uint8_t*)&conf.pid[0].P_8,3*PIDITEMS);
+      s_struct((uint8_t*)&conf.pid[0].P8,3*PIDITEMS);
       break;
     case MSP_PIDNAMES:
       serializeNames(pidnames);

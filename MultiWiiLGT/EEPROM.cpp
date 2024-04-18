@@ -1,4 +1,4 @@
-// LGT 的 EEPROM 库，替换掉 Arduino 原生的。 Dolphin 2023.12.06
+// LGT 的 EEPROM 库，替换掉 Arduino 原生的。 Dolphin 2024.03.25
 // #include <avr/eeprom.h>
 #include "LGT_EEPROM.h"
 #include "Arduino.h"
@@ -19,7 +19,7 @@ uint8_t calculate_sum(uint8_t *cb , uint8_t siz) {
 }
 
 void readGlobalSet() {
-  // LGT 的 EEPROM 库，替换掉 Arduino 原生的。 Dolphin 2023.12.06  
+  // LGT 的 EEPROM 库，替换掉 Arduino 原生的。 Dolphin 2024.03.25  
   // eeprom_read_block((void*)&global_conf, (void*)0, sizeof(global_conf));
   lgt_eeprom_read_block((void*)&global_conf, (void*)0, sizeof(global_conf));
   if(calculate_sum((uint8_t*)&global_conf, sizeof(global_conf)) != global_conf.checksum) {
@@ -38,7 +38,7 @@ bool readEEPROM() {
   #else
     global_conf.currentSet=0;
   #endif
-  // LGT 的 EEPROM 库，替换掉 Arduino 原生的。 Dolphin 2023.12.06  
+  // LGT 的 EEPROM 库，替换掉 Arduino 原生的。 Dolphin 2024.03.25 
   // eeprom_read_block((void*)&conf, (void*)(global_conf.currentSet * sizeof(conf) + sizeof(global_conf)), sizeof(conf));
   lgt_eeprom_read_block((void*)&conf, (void*)(global_conf.currentSet * sizeof(conf) + sizeof(global_conf)), sizeof(conf));
   if(calculate_sum((uint8_t*)&conf, sizeof(conf)) != conf.checksum) {
@@ -73,9 +73,9 @@ bool readEEPROM() {
 
 void writeGlobalSet(uint8_t b) {
   global_conf.checksum = calculate_sum((uint8_t*)&global_conf, sizeof(global_conf));
-  // LGT 的 EEPROM 库，替换掉 Arduino 原生的。 Dolphin 2023.12.06
+  // LGT 的 EEPROM 库，替换掉 Arduino 原生的。 Dolphin 2024.03.25
   // eeprom_write_block((const void*)&global_conf, (void*)0, sizeof(global_conf));
-  lgt_eeprom_write_block((const void*)&global_conf, (void*)0, sizeof(global_conf));
+  lgt_eeprom_write_block((const void*)&global_conf, (void*)0, sizeof(global_conf)); 
   if (b == 1) blinkLED(15,20,1);
   SET_ALARM_BUZZER(ALRM_FAC_CONFIRM, ALRM_LVL_CONFIRM_1);
 
@@ -88,8 +88,8 @@ void writeParams(uint8_t b) {
     global_conf.currentSet=0;
   #endif
   conf.checksum = calculate_sum((uint8_t*)&conf, sizeof(conf));
-  // LGT 的 EEPROM 库，替换掉 Arduino 原生的。 Dolphin 2023.12.06
-  eeprom_write_block((const void*)&conf, (void*)(global_conf.currentSet * sizeof(conf) + sizeof(global_conf)), sizeof(conf));
+  // LGT 的 EEPROM 库，替换掉 Arduino 原生的。 Dolphin 2024.03.25
+  // eeprom_write_block((const void*)&conf, (void*)(global_conf.currentSet * sizeof(conf) + sizeof(global_conf)), sizeof(conf));
   lgt_eeprom_write_block((const void*)&conf, (void*)(global_conf.currentSet * sizeof(conf) + sizeof(global_conf)), sizeof(conf));
 
 #if GPS
@@ -162,28 +162,24 @@ void LoadDefaults() {
     // do that at the last possible moment, so we can override virtually all defaults and constants
   #else
     #if PID_CONTROLLER == 1
-      /*
-      * D8 与 LGT 的 pins_arduino.h 宏定义冲突，改为 D_8.
-      * Dolphin 2023.12.06
-      // */    
-      conf.pid[ROLL].P_8     = 33;  conf.pid[ROLL].I_8    = 30; conf.pid[ROLL].D_8     = 23;
-      conf.pid[PITCH].P_8    = 33; conf.pid[PITCH].I_8    = 30; conf.pid[PITCH].D_8    = 23;
-      conf.pid[PIDLEVEL].P_8 = 90; conf.pid[PIDLEVEL].I_8 = 10; conf.pid[PIDLEVEL].D_8 = 100;
+      conf.pid[ROLL].P8     = 33;  conf.pid[ROLL].I8    = 30; conf.pid[ROLL].D_8     = 23;
+      conf.pid[PITCH].P8    = 33; conf.pid[PITCH].I8    = 30; conf.pid[PITCH].D_8    = 23;
+      conf.pid[PIDLEVEL].P8 = 90; conf.pid[PIDLEVEL].I8 = 10; conf.pid[PIDLEVEL].D_8 = 100;
     #elif PID_CONTROLLER == 2
-      conf.pid[ROLL].P_8     = 28;  conf.pid[ROLL].I_8    = 10; conf.pid[ROLL].D_8     = 7;
-      conf.pid[PITCH].P_8    = 28; conf.pid[PITCH].I_8    = 10; conf.pid[PITCH].D_8    = 7;
-      conf.pid[PIDLEVEL].P_8 = 30; conf.pid[PIDLEVEL].I_8 = 32; conf.pid[PIDLEVEL].D_8 = 0;
+      conf.pid[ROLL].P8     = 28;  conf.pid[ROLL].I8    = 10; conf.pid[ROLL].D_8     = 7;
+      conf.pid[PITCH].P8    = 28; conf.pid[PITCH].I8    = 10; conf.pid[PITCH].D_8    = 7;
+      conf.pid[PIDLEVEL].P8 = 30; conf.pid[PIDLEVEL].I8 = 32; conf.pid[PIDLEVEL].D_8 = 0;
     #endif
-    conf.pid[YAW].P_8      = 68;  conf.pid[YAW].I_8     = 45;  conf.pid[YAW].D_8     = 0;
-    conf.pid[PIDALT].P_8   = 64; conf.pid[PIDALT].I_8   = 25; conf.pid[PIDALT].D_8   = 24;
+    conf.pid[YAW].P8      = 68;  conf.pid[YAW].I8     = 45;  conf.pid[YAW].D_8     = 0;
+    conf.pid[PIDALT].P8   = 64; conf.pid[PIDALT].I8   = 25; conf.pid[PIDALT].D_8   = 24;
 
-    conf.pid[PIDPOS].P_8  = POSHOLD_P * 100;     conf.pid[PIDPOS].I_8    = POSHOLD_I * 100;       conf.pid[PIDPOS].D_8    = 0;
-    conf.pid[PIDPOSR].P_8 = POSHOLD_RATE_P * 10; conf.pid[PIDPOSR].I_8   = POSHOLD_RATE_I * 100;  conf.pid[PIDPOSR].D_8   = POSHOLD_RATE_D * 1000;
-    conf.pid[PIDNAVR].P_8 = NAV_P * 10;          conf.pid[PIDNAVR].I_8   = NAV_I * 100;           conf.pid[PIDNAVR].D_8   = NAV_D * 1000;
+    conf.pid[PIDPOS].P8  = POSHOLD_P * 100;     conf.pid[PIDPOS].I8    = POSHOLD_I * 100;       conf.pid[PIDPOS].D_8    = 0;
+    conf.pid[PIDPOSR].P8 = POSHOLD_RATE_P * 10; conf.pid[PIDPOSR].I8   = POSHOLD_RATE_I * 100;  conf.pid[PIDPOSR].D_8   = POSHOLD_RATE_D * 1000;
+    conf.pid[PIDNAVR].P8 = NAV_P * 10;          conf.pid[PIDNAVR].I8   = NAV_I * 100;           conf.pid[PIDNAVR].D_8   = NAV_D * 1000;
   
-    conf.pid[PIDMAG].P_8   = 40;
+    conf.pid[PIDMAG].P8   = 40;
 
-    conf.pid[PIDVEL].P_8 = 0;      conf.pid[PIDVEL].I_8 = 0;    conf.pid[PIDVEL].D_8 = 0;
+    conf.pid[PIDVEL].P8 = 0;      conf.pid[PIDVEL].I8 = 0;    conf.pid[PIDVEL].D_8 = 0;
 
     conf.rcRate8 = 90; conf.rcExpo8 = 65;
     conf.rollPitchRate = 0;
@@ -230,9 +226,9 @@ void LoadDefaults() {
 
 #ifdef LOG_PERMANENT
 void readPLog(void) {
-  // LGT 的 EEPROM 库，替换掉 Arduino 原生的。 Dolphin 2023.12.06
+  // LGT 的 EEPROM 库，替换掉 Arduino 原生的。 Dolphin 2024.03.25
   // eeprom_read_block((void*)&plog, (void*)(E2END - 4 - sizeof(plog)), sizeof(plog));
-  lgt_eeprom_read_block((void*)&plog, (void*)(E2END - 4 - sizeof(plog)), sizeof(plog));
+  lgt_eeprom_read_block((void*)&plog, (void*)(E2END - 4 - sizeof(plog)), sizeof(plog));  
   if(calculate_sum((uint8_t*)&plog, sizeof(plog)) != plog.checksum) {
     blinkLED(9,100,3);
     SET_ALARM_BUZZER(ALRM_FAC_CONFIRM, ALRM_LVL_CONFIRM_ELSE);
@@ -245,7 +241,7 @@ void readPLog(void) {
 }
 void writePLog(void) {
   plog.checksum = calculate_sum((uint8_t*)&plog, sizeof(plog));
-  // LGT 的 EEPROM 库，替换掉 Arduino 原生的。 Dolphin 2023.12.06
+  // LGT 的 EEPROM 库，替换掉 Arduino 原生的。 Dolphin 2024.03.25
   // eeprom_write_block((const void*)&plog, (void*)(E2END - 4 - sizeof(plog)), sizeof(plog));
   lgt_eeprom_write_block((const void*)&plog, (void*)(E2END - 4 - sizeof(plog)), sizeof(plog));
 }
@@ -269,14 +265,14 @@ void writePLog(void) {
 
 void writeGPSconf(void) {
   GPS_conf.checksum = calculate_sum((uint8_t*)&GPS_conf, sizeof(GPS_conf));
-  // LGT 的 EEPROM 库，替换掉 Arduino 原生的。 Dolphin 2023.12.06
+  // LGT 的 EEPROM 库，替换掉 Arduino 原生的。 Dolphin 2024.03.25
   // eeprom_write_block( (void*)&GPS_conf, (void*) (PROFILES * sizeof(conf) + sizeof(global_conf)), sizeof(GPS_conf) );
   lgt_eeprom_write_block( (void*)&GPS_conf, (void*) (PROFILES * sizeof(conf) + sizeof(global_conf)), sizeof(GPS_conf) );
 }
 
 //Recall gps_configuration
 bool recallGPSconf(void) {
-  // LGT 的 EEPROM 库，替换掉 Arduino 原生的。 Dolphin 2023.12.06
+  // LGT 的 EEPROM 库，替换掉 Arduino 原生的。 Dolphin 2024.03.25
   // eeprom_read_block((void*)&GPS_conf, (void*)(PROFILES * sizeof(conf) + sizeof(global_conf)), sizeof(GPS_conf));
   lgt_eeprom_read_block((void*)&GPS_conf, (void*)(PROFILES * sizeof(conf) + sizeof(global_conf)), sizeof(GPS_conf));
   if(calculate_sum((uint8_t*)&GPS_conf, sizeof(GPS_conf)) != GPS_conf.checksum) {
@@ -329,7 +325,7 @@ void loadGPSdefaults(void) {
 void storeWP() {
   if (mission_step.number >254) return;
   mission_step.checksum = calculate_sum((uint8_t*)&mission_step, sizeof(mission_step));
-  // LGT 的 EEPROM 库，替换掉 Arduino 原生的。 Dolphin 2023.12.06
+  // LGT 的 EEPROM 库，替换掉 Arduino 原生的。 Dolphin 2024.03.25
   // eeprom_write_block((void*)&mission_step, (void*)(PROFILES * sizeof(conf) + sizeof(global_conf) + sizeof(GPS_conf) +(sizeof(mission_step)*mission_step.number)),sizeof(mission_step));
   lgt_eeprom_write_block((void*)&mission_step, (void*)(PROFILES * sizeof(conf) + sizeof(global_conf) + sizeof(GPS_conf) +(sizeof(mission_step)*mission_step.number)),sizeof(mission_step));
 }
@@ -338,7 +334,7 @@ void storeWP() {
 // Returns true when reading is successfull and returns false if there were some error (for example checksum)
 bool recallWP(uint8_t wp_number) {
   if (wp_number > 254) return false;
-  // LGT 的 EEPROM 库，替换掉 Arduino 原生的。 Dolphin 2023.12.06
+  // LGT 的 EEPROM 库，替换掉 Arduino 原生的。 Dolphin 2024.03.25
   // eeprom_read_block((void*)&mission_step, (void*)(PROFILES * sizeof(conf) + sizeof(global_conf)+sizeof(GPS_conf)+(sizeof(mission_step)*wp_number)), sizeof(mission_step));
   lgt_eeprom_read_block((void*)&mission_step, (void*)(PROFILES * sizeof(conf) + sizeof(global_conf)+sizeof(GPS_conf)+(sizeof(mission_step)*wp_number)), sizeof(mission_step));
   if(calculate_sum((uint8_t*)&mission_step, sizeof(mission_step)) != mission_step.checksum) return false;

@@ -320,19 +320,10 @@ uint8_t getEstimatedAltitude(){
     //P
     int16_t error16 = constrain(AltHold - alt.EstAlt, -300, 300);
     applyDeadband(error16, 10); //remove small P parametr to reduce noise near zero position
+    BaroPID = constrain((conf.pid[PIDALT].P8 * error16 >>7), -150, +150);
 
-    /*
-    * D8 与 LGT 的 pins_arduino.h 宏定义冲突，改为 D_8.
-    * Dolphin 2023.12.06
-    // */    
-    BaroPID = constrain((conf.pid[PIDALT].P_8 * error16 >>7), -150, +150);
-
-    /*
-    * D8 与 LGT 的 pins_arduino.h 宏定义冲突，改为 D_8.
-    * Dolphin 2023.12.06
-    // */
     //I
-    errorAltitudeI += conf.pid[PIDALT].I_8 * error16 >>6;
+    errorAltitudeI += conf.pid[PIDALT].I8 * error16 >>6;
     errorAltitudeI = constrain(errorAltitudeI,-30000,30000);
     BaroPID += errorAltitudeI>>9; //I in range +/-60
  
@@ -357,11 +348,6 @@ uint8_t getEstimatedAltitude(){
     //D
     alt.vario = vel;
     applyDeadband(alt.vario, 5);
-
-    /*
-    * D8 与 LGT 的 pins_arduino.h 宏定义冲突，改为 D_8.
-    * Dolphin 2023.12.06
-    // */    
     BaroPID -= constrain(conf.pid[PIDALT].D_8 * alt.vario >>4, -150, 150);
   #endif
   return 1;

@@ -1,4 +1,3 @@
-
 /*
  * Welcome to MultiWii.
  *
@@ -10,8 +9,5 @@
  *
  * Have fun, and do not forget MultiWii is made possible and brought to you under the GPL License.
  *
- * Dolphin 2023.12.11
- * 修改：
- * Alarm D8 -> D28 OSC2
- * 
  */
+

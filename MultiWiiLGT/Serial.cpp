@@ -114,11 +114,16 @@ void SerialOpen(uint8_t port, uint32_t baud) {
   uint8_t h = ((F_CPU  / 4 / baud -1) / 2) >> 8;
   uint8_t l = ((F_CPU  / 4 / baud -1) / 2);
   switch (port) {
+/*
+    #if defined(PROMINI)
+      case 0: UCSR0A  = (1<<U2X0); UBRR0H = h; UBRR0L = l; UCSR0B |= (1<<RXEN0)|(1<<TXEN0)|(1<<RXCIE0); break;
+    #endif
+// */    
     #if defined(PROMINI)
       case 0: 
         UCSR0A  = (1<<U2X0); 
         // 来自 nulllab_arduino-v1.0.9/cores/lgt8f/HardwareSerial.cpp
-        // Dolphin 2023.12.06
+        // Dolphin 2024.03.25
         if (((F_CPU == 16000000UL) && (baud == 57600)) || ((F_CPU == 32000000UL) && (CLOCK_SOURCE == INT_OSC_32M)))
         {
           UCSR0A = 0;
@@ -129,7 +134,7 @@ void SerialOpen(uint8_t port, uint32_t baud) {
         UBRR0L = l; 
         UCSR0B |= (1<<RXEN0)|(1<<TXEN0)|(1<<RXCIE0); 
         break;
-    #endif
+    #endif    
     #if defined(PROMICRO)
       #if (ARDUINO >= 100) && !defined(TEENSY20)
         case 0: UDIEN &= ~(1<<SOFE); break;// disable the USB frame interrupt of arduino (it causes strong jitter and we dont need it)

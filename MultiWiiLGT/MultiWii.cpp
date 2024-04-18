@@ -25,6 +25,7 @@ March  2015     V2.4
 #include "Serial.h"
 #include "GPS.h"
 #include "Protocol.h"
+#include "Telemetry.h"
 
 #include <avr/pgmspace.h>
 
@@ -70,7 +71,7 @@ const char boxnames[] PROGMEM = // names for dynamic generation of config GUI
   "GPS HOME;"
   "GPS HOLD;"
 #endif
-#if defined(FIXEDWING) || defined(HELICOPTER)
+#if defined(FIXEDWING)
   "PASSTHRU;"
 #endif
 #if defined(BUZZER)
@@ -125,7 +126,7 @@ const uint8_t boxids[] PROGMEM = {// permanent IDs associated to boxes. This way
   10, //"GPS HOME;"
   11, //"GPS HOLD;"
 #endif
-#if defined(FIXEDWING) || defined(HELICOPTER)
+#if defined(FIXEDWING)
   12, //"PASSTHRU;"
 #endif
 #if defined(BUZZER)
@@ -202,7 +203,7 @@ flags_struct_t f;
     uint16_t wattsMax = 0;
   #endif
 #endif
-#if defined(LOG_VALUES) || defined(LCD_TELEMETRY) || defined(ARMEDTIMEWARNING) || defined(LOG_PERMANENT)
+#if defined(LOG_VALUES) || defined(LCD_TELEMETRY) || defined(ARMEDTIMEWARNING) || defined(LOG_PERMANENT) || defined (TELEMETRY)
   uint32_t armedTime = 0;
 #endif
 
@@ -373,11 +374,12 @@ void annexCode() { // this code is excetuted at each loop and won't interfere wi
   uint8_t axis,prop1,prop2;
 
   // PITCH & ROLL only dynamic PID adjustemnt,  depending on throttle value (or collective.pitch value for heli)
-  #ifdef HELICOPTER
-    #define DYN_THR_PID_CHANNEL COLLECTIVE_PITCH
-  #else
+  // #ifdef HELICOPTER
+  //   #define DYN_THR_PID_CHANNEL COLLECTIVE_PITCH
+  // #else
     #define DYN_THR_PID_CHANNEL THROTTLE
-  #endif
+  // #endif
+
   prop2 = 128; // prop2 was 100, is 128 now
   if (rcData[DYN_THR_PID_CHANNEL]>1500) { // breakpoint is fix: 1500
     if (rcData[DYN_THR_PID_CHANNEL]<2000) {
@@ -398,12 +400,7 @@ void annexCode() { // this code is excetuted at each loop and won't interfere wi
       rcCommand[axis] = lookupPitchRollRC[tmp2] + ((tmp-(tmp2<<7)) * (lookupPitchRollRC[tmp2+1]-lookupPitchRollRC[tmp2])>>7);
       prop1 = 128-((uint16_t)conf.rollPitchRate*tmp>>9); // prop1 was 100, is 128 now -- and /512 instead of /500
       prop1 = (uint16_t)prop1*prop2>>7; // prop1: max is 128   prop2: max is 128   result prop1: max is 128
-
-      /*
-      * D8 与 LGT 的 pins_arduino.h 宏定义冲突，改为 D_8.
-      * Dolphin 2023.12.06
-      // */      
-      dynP8[axis] = (uint16_t)conf.pid[axis].P_8*prop1>>7; // was /100, is /128 now
+      dynP8[axis] = (uint16_t)conf.pid[axis].P8*prop1>>7; // was /100, is /128 now
       dynD8[axis] = (uint16_t)conf.pid[axis].D_8*prop1>>7; // was /100, is /128 now
     } else {      // YAW
       rcCommand[axis] = tmp;
@@ -593,6 +590,10 @@ void annexCode() { // this code is excetuted at each loop and won't interfere wi
     }
   #endif
 
+  #ifdef TELEMETRY
+     run_telemetry();
+  #endif
+
   #if GPS & defined(GPS_LED_INDICATOR)       // modified by MIS to use STABLEPIN LED for number of sattelites indication
     static uint32_t GPSLEDTime;              // - No GPS FIX -> LED blink at speed of incoming GPS frames
     static uint8_t blcnt;                    // - Fix and sat no. bellow 5 -> LED off
@@ -613,7 +614,7 @@ void annexCode() { // this code is excetuted at each loop and won't interfere wi
     if (cycleTime < cycleTimeMin) cycleTimeMin = cycleTime; // remember lowscore
   #endif
   if (f.ARMED)  {
-    #if defined(LCD_TELEMETRY) || defined(ARMEDTIMEWARNING) || defined(LOG_PERMANENT)
+    #if defined(LCD_TELEMETRY) || defined(ARMEDTIMEWARNING) || defined(LOG_PERMANENT) || defined (TELEMETRY)
       armedTime += (uint32_t)cycleTime;
     #endif
     #if defined(VBAT)
@@ -702,6 +703,16 @@ void setup() {
   #if GPS
     GPS_set_pids();
   #endif
+
+  // 等待用户插上电池之后，LED 闪 5 秒，等待把飞机放置平稳。Dolphin 2024.04.10
+  {
+    for (uint8_t nFlag = 0; nFlag < 25; nFlag ++)
+    {
+      LEDPIN_TOGGLE; // switch LEDPIN state
+      delay(200);
+    }
+  }
+
   previousTime = micros();
   #if defined(GIMBAL)
    calibratingA = 512;
@@ -727,6 +738,9 @@ void setup() {
   #endif
   #ifdef LCD_CONF_DEBUG
     configurationLoop();
+  #endif
+  #ifdef TELEMETRY
+    init_telemetry();
   #endif
   #ifdef LANDING_LIGHTS_DDR
     init_landing_lights();
@@ -897,7 +911,9 @@ void loop () {
     rcSticks = stTmp;
     
     // perform actions    
-    if (rcData[THROTTLE] <= MINCHECK) {            // THROTTLE at minimum
+    if (rcData[THROTTLE] <= MINCHECK) 
+    {
+      // THROTTLE at minimum
       #if !defined(FIXEDWING)
         errorGyroI[ROLL] = 0; errorGyroI[PITCH] = 0;
         #if PID_CONTROLLER == 1
@@ -907,21 +923,41 @@ void loop () {
         #endif
         errorAngleI[ROLL] = 0; errorAngleI[PITCH] = 0;
       #endif
-      if (conf.activate[BOXARM] > 0) {             // Arming/Disarming via ARM BOX
-        if ( rcOptions[BOXARM] && f.OK_TO_ARM ) go_arm(); else if (f.ARMED) go_disarm();
+      if (conf.activate[BOXARM] > 0) 
+      {             
+        // Arming/Disarming via ARM BOX
+        if ( rcOptions[BOXARM] && f.OK_TO_ARM ) 
+        {
+          go_arm(); 
+        }
+        else if (f.ARMED) 
+        {
+          go_disarm();
+        }
       }
     }
+
     if(rcDelayCommand == 20) {
-      if(f.ARMED) {                   // actions during armed
-        #ifdef ALLOW_ARM_DISARM_VIA_TX_YAW
-          if (conf.activate[BOXARM] == 0 && rcSticks == THR_LO + YAW_LO + PIT_CE + ROL_CE) go_disarm();    // Disarm via YAW
-        #endif
-        #ifdef ALLOW_ARM_DISARM_VIA_TX_ROLL
-          if (conf.activate[BOXARM] == 0 && rcSticks == THR_LO + YAW_CE + PIT_CE + ROL_LO) go_disarm();    // Disarm via ROLL
-        #endif
-      } else {                        // actions during not armed
+      if(f.ARMED) 
+      {                   
+        // actions during armed
+        #if defined(AIRPLANE)
+        #else
+          #ifdef ALLOW_ARM_DISARM_VIA_TX_YAW
+            if (conf.activate[BOXARM] == 0 && rcSticks == THR_LO + YAW_LO + PIT_CE + ROL_CE) go_disarm();    // Disarm via YAW
+          #endif
+          #ifdef ALLOW_ARM_DISARM_VIA_TX_ROLL
+            if (conf.activate[BOXARM] == 0 && rcSticks == THR_LO + YAW_CE + PIT_CE + ROL_LO) go_disarm();    // Disarm via ROLL
+          #endif
+        #endif        
+      } 
+      else 
+      {                        
+        // actions during not armed
         i=0;
-        if (rcSticks == THR_LO + YAW_LO + PIT_LO + ROL_CE) {    // GYRO calibration
+        if (rcSticks == THR_LO + YAW_LO + PIT_LO + ROL_CE) 
+        {    
+          // GYRO calibration
           calibratingG=512;
           #if GPS 
             GPS_reset_home_position();
@@ -931,11 +967,17 @@ void loop () {
           #endif
         }
         #if defined(INFLIGHT_ACC_CALIBRATION)  
-         else if (rcSticks == THR_LO + YAW_LO + PIT_HI + ROL_HI) {    // Inflight ACC calibration START/STOP
-            if (AccInflightCalibrationMeasurementDone){                // trigger saving into eeprom after landing
+         else if (rcSticks == THR_LO + YAW_LO + PIT_HI + ROL_HI) 
+         {    
+          // Inflight ACC calibration START/STOP
+            if (AccInflightCalibrationMeasurementDone)
+            {                
+              // trigger saving into eeprom after landing
               AccInflightCalibrationMeasurementDone = 0;
               AccInflightCalibrationSavetoEEProm = 1;
-            }else{ 
+            }
+            else
+            { 
               AccInflightCalibrationArmed = !AccInflightCalibrationArmed; 
               #if defined(BUZZER)
                 if (AccInflightCalibrationArmed) SET_ALARM_BUZZER(ALRM_FAC_TOGGLE, ALRM_LVL_TOGGLE_2);
@@ -963,10 +1005,16 @@ void loop () {
           previousTime = micros();
         }
         #ifdef ALLOW_ARM_DISARM_VIA_TX_YAW
-          else if (conf.activate[BOXARM] == 0 && rcSticks == THR_LO + YAW_HI + PIT_CE + ROL_CE) go_arm();      // Arm via YAW
+          else if (conf.activate[BOXARM] == 0 && rcSticks == THR_LO + YAW_HI + PIT_CE + ROL_CE) 
+          {
+            go_arm();      // Arm via YAW
+          }
         #endif
         #ifdef ALLOW_ARM_DISARM_VIA_TX_ROLL
-          else if (conf.activate[BOXARM] == 0 && rcSticks == THR_LO + YAW_CE + PIT_CE + ROL_HI) go_arm();      // Arm via ROLL
+          else if (conf.activate[BOXARM] == 0 && rcSticks == THR_LO + YAW_CE + PIT_CE + ROL_HI) 
+          {
+            go_arm();      // Arm via ROLL
+          }
         #endif
         #ifdef LCD_TELEMETRY_AUTO
           else if (rcSticks == THR_LO + YAW_CE + PIT_HI + ROL_LO) {              // Auto telemetry ON/OFF
@@ -989,16 +1037,38 @@ void loop () {
           }
         #endif
         #if ACC
-          else if (rcSticks == THR_HI + YAW_LO + PIT_LO + ROL_CE) calibratingA=512;     // throttle=max, yaw=left, pitch=min
+          else if (rcSticks == THR_HI + YAW_LO + PIT_LO + ROL_CE) 
+          {
+            calibratingA=512;     // throttle=max, yaw=left, pitch=min
+          }
         #endif
         #if MAG
-          else if (rcSticks == THR_HI + YAW_HI + PIT_LO + ROL_CE) f.CALIBRATE_MAG = 1;  // throttle=max, yaw=right, pitch=min
+          else if (rcSticks == THR_HI + YAW_HI + PIT_LO + ROL_CE) 
+          {
+            f.CALIBRATE_MAG = 1;  // throttle=max, yaw=right, pitch=min
+          }
         #endif
         i=0;
-        if      (rcSticks == THR_HI + YAW_CE + PIT_HI + ROL_CE) {conf.angleTrim[PITCH]+=2; i=1;}
-        else if (rcSticks == THR_HI + YAW_CE + PIT_LO + ROL_CE) {conf.angleTrim[PITCH]-=2; i=1;}
-        else if (rcSticks == THR_HI + YAW_CE + PIT_CE + ROL_HI) {conf.angleTrim[ROLL] +=2; i=1;}
-        else if (rcSticks == THR_HI + YAW_CE + PIT_CE + ROL_LO) {conf.angleTrim[ROLL] -=2; i=1;}
+        if      (rcSticks == THR_HI + YAW_CE + PIT_HI + ROL_CE) 
+        {
+          conf.angleTrim[PITCH]+=2; 
+          i=1;
+        }
+        else if (rcSticks == THR_HI + YAW_CE + PIT_LO + ROL_CE) 
+        {
+          conf.angleTrim[PITCH]-=2; 
+          i=1;
+        }
+        else if (rcSticks == THR_HI + YAW_CE + PIT_CE + ROL_HI) 
+        {
+          conf.angleTrim[ROLL] +=2; 
+          i=1;
+        }
+        else if (rcSticks == THR_HI + YAW_CE + PIT_CE + ROL_LO) 
+        {
+          conf.angleTrim[ROLL] -=2; 
+          i=1;
+        }
         if (i) {
           writeParams(1);
           rcDelayCommand = 0;    // allow autorepetition
@@ -1008,6 +1078,7 @@ void loop () {
         }
       }
     }
+
     #if defined(LED_FLASHER)
       led_flasher_autoselect_sequence();
     #endif
@@ -1230,9 +1301,15 @@ void loop () {
 
     #endif //GPS
 
-    #if defined(FIXEDWING) || defined(HELICOPTER)
-      if (rcOptions[BOXPASSTHRU]) {f.PASSTHRU_MODE = 1;}
-      else {f.PASSTHRU_MODE = 0;}
+    #if defined(FIXEDWING)
+      if (rcOptions[BOXPASSTHRU]) 
+      {
+        f.PASSTHRU_MODE = 1;
+      }
+      else 
+      {
+        f.PASSTHRU_MODE = 0;
+      }
     #endif
  
   } else { // not in rc loop
@@ -1324,12 +1401,7 @@ void loop () {
     int16_t dif = att.heading - magHold;
     if (dif <= - 180) dif += 360;
     if (dif >= + 180) dif -= 360;
-
-    /*
-    * D8 与 LGT 的 pins_arduino.h 宏定义冲突，改为 D_8.
-    * Dolphin 2023.12.06
-    // */    
-    if (f.SMALL_ANGLES_25 || (f.GPS_mode != 0)) rcCommand[YAW] -= dif*conf.pid[PIDMAG].P_8 >> 5;  //Always correct maghold in GPS mode
+    if (f.SMALL_ANGLES_25 || (f.GPS_mode != 0)) rcCommand[YAW] -= dif*conf.pid[PIDMAG].P8 >> 5;  //Always correct maghold in GPS mode
   } else magHold = att.heading;
 
   #if BARO && (!defined(SUPPRESS_BARO_ALTHOLD))
@@ -1407,25 +1479,21 @@ void loop () {
     errorGyroI[axis]  = constrain(errorGyroI[axis]+error,-16000,+16000);       // WindUp   16 bits is ok here
     if (abs(imu.gyroData[axis])>640) errorGyroI[axis] = 0;
 
-    /*
-    * D8 与 LGT 的 pins_arduino.h 宏定义冲突，改为 D_8.
-    * Dolphin 2023.12.06
-    // */
-    ITerm = (errorGyroI[axis]>>7)*conf.pid[axis].I_8>>6;                        // 16 bits is ok here 16000/125 = 128 ; 128*250 = 32000
+    ITerm = (errorGyroI[axis]>>7)*conf.pid[axis].I8>>6;                        // 16 bits is ok here 16000/125 = 128 ; 128*250 = 32000
 
-    PTerm = mul(rc,conf.pid[axis].P_8)>>6;
+    PTerm = mul(rc,conf.pid[axis].P8)>>6;
     
     if (f.ANGLE_MODE || f.HORIZON_MODE) { // axis relying on ACC
-      // 50 degrees max inclination
-      errorAngle         = constrain(rc + GPS_angle[axis],-500,+500) - att.angle[axis] + conf.angleTrim[axis]; //16 bits is ok here
+      // 50 degrees max inclination MAX_ANGEL = 500
+      errorAngle         = constrain(rc + GPS_angle[axis],- MAX_ANGEL, + MAX_ANGEL) - att.angle[axis] + conf.angleTrim[axis]; //16 bits is ok here
       errorAngleI[axis]  = constrain(errorAngleI[axis]+errorAngle,-10000,+10000);                                                // WindUp     //16 bits is ok here
 
-      PTermACC           = mul(errorAngle,conf.pid[PIDLEVEL].P_8)>>7; // 32 bits is needed for calculation: errorAngle*P_8 could exceed 32768   16 bits is ok for result
+      PTermACC           = mul(errorAngle,conf.pid[PIDLEVEL].P8)>>7; // 32 bits is needed for calculation: errorAngle*P8 could exceed 32768   16 bits is ok for result
 
       int16_t limit      = conf.pid[PIDLEVEL].D_8*5;
       PTermACC           = constrain(PTermACC,-limit,+limit);
 
-      ITermACC           = mul(errorAngleI[axis],conf.pid[PIDLEVEL].I_8)>>12;   // 32 bits is needed for calculation:10000*I_8 could exceed 32768   16 bits is ok for result
+      ITermACC           = mul(errorAngleI[axis],conf.pid[PIDLEVEL].I8)>>12;   // 32 bits is needed for calculation:10000*I8 could exceed 32768   16 bits is ok for result
 
       ITerm              = ITermACC + ((ITerm-ITermACC)*prop>>9);
       PTerm              = PTermACC + ((PTerm-PTermACC)*prop>>9);
@@ -1446,21 +1514,20 @@ void loop () {
 
   //YAW
   #define GYRO_P_MAX 300
+#if defined(AIRPLANE)
+  #define GYRO_I_MAX 150    // 固定翼的方向舵不需要这么大的 I_MAX. Dolphin 2024.04.06
+#else
   #define GYRO_I_MAX 250
+#endif
 
   rc = mul(rcCommand[YAW] , (2*conf.yawRate + 30))  >> 5;
 
   error = rc - imu.gyroData[YAW];
-
-  /*
-  * D8 与 LGT 的 pins_arduino.h 宏定义冲突，改为 D_8.
-  * Dolphin 2023.12.06
-  // */  
-  errorGyroI_YAW  += mul(error,conf.pid[YAW].I_8);
+  errorGyroI_YAW  += mul(error,conf.pid[YAW].I8);
   errorGyroI_YAW  = constrain(errorGyroI_YAW, 2-((int32_t)1<<28), -2+((int32_t)1<<28));
   if (abs(rc) > 50) errorGyroI_YAW = 0;
   
-  PTerm = mul(error,conf.pid[YAW].P_8)>>6;
+  PTerm = mul(error,conf.pid[YAW].P8)>>6;
   #ifndef COPTER_WITH_SERVO
     int16_t limit = GYRO_P_MAX-conf.pid[YAW].D_8;
     PTerm = constrain(PTerm,-limit,+limit);
@@ -1489,15 +1556,10 @@ void loop () {
         AngleRateTmp = ((int32_t) (conf.rollPitchRate + 27) * rcCommand[axis]) >> 4;
         if (f.HORIZON_MODE) {
           //mix up angle error to desired AngleRateTmp to add a little auto-level feel
-
-          /*
-          * D8 与 LGT 的 pins_arduino.h 宏定义冲突，改为 D_8.
-          * Dolphin 2023.12.06
-          // */          
-          AngleRateTmp += ((int32_t) errorAngle * conf.pid[PIDLEVEL].I_8)>>8;
+          AngleRateTmp += ((int32_t) errorAngle * conf.pid[PIDLEVEL].I8)>>8;
         }
       } else {//it's the ANGLE mode - control is angle based, so control loop is needed
-        AngleRateTmp = ((int32_t) errorAngle * conf.pid[PIDLEVEL].P_8)>>4;
+        AngleRateTmp = ((int32_t) errorAngle * conf.pid[PIDLEVEL].P8)>>4;
       }
     }
 
@@ -1507,21 +1569,17 @@ void loop () {
     //multiplication of rcCommand corresponds to changing the sticks scaling here
     RateError = AngleRateTmp  - imu.gyroData[axis];
 
-    /*
-    * D8 与 LGT 的 pins_arduino.h 宏定义冲突，改为 D_8.
-    * Dolphin 2023.12.06
-    // */
     //-----calculate P component
-    PTerm = ((int32_t) RateError * conf.pid[axis].P_8)>>7;
+    PTerm = ((int32_t) RateError * conf.pid[axis].P8)>>7;
 
     //-----calculate I component
     //there should be no division before accumulating the error to integrator, because the precision would be reduced.
     //Precision is critical, as I prevents from long-time drift. Thus, 32 bits integrator is used.
     //Time correction (to avoid different I scaling for different builds based on average cycle time)
     //is normalized to cycle time = 2048.
-    errorGyroI[axis]  += (((int32_t) RateError * cycleTime)>>11) * conf.pid[axis].I_8;
+    errorGyroI[axis]  += (((int32_t) RateError * cycleTime)>>11) * conf.pid[axis].I8;
     //limit maximum integrator value to prevent WindUp - accumulating extreme values when system is saturated.
-    //I coefficient (I_8) moved before integration to make limiting independent from PID settings
+    //I coefficient (I8) moved before integration to make limiting independent from PID settings
     errorGyroI[axis]  = constrain(errorGyroI[axis], (int32_t) -GYRO_I_MAX<<13, (int32_t) +GYRO_I_MAX<<13);
     ITerm = errorGyroI[axis]>>13;
 
@@ -1537,10 +1595,6 @@ void loop () {
     delta2[axis]   = delta1[axis];
     delta1[axis]   = delta;
 
-    /*
-    * D8 与 LGT 的 pins_arduino.h 宏定义冲突，改为 D_8.
-    * Dolphin 2023.12.06
-    // */
     //DTerm = (deltaSum*conf.pid[axis].D_8)>>8;
     //Solve overflow in calculation above...
     DTerm = ((int32_t)deltaSum*conf.pid[axis].D_8)>>8;

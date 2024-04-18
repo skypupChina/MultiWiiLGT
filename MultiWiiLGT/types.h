@@ -57,7 +57,7 @@ enum box {
     BOXGPSHOME,
     BOXGPSHOLD,
   #endif
-  #if defined(FIXEDWING) || defined(HELICOPTER)
+  #if defined(FIXEDWING)
     BOXPASSTHRU,
   #endif
   #if defined(BUZZER)
@@ -124,7 +124,7 @@ typedef struct {
 #ifdef HEADFREE
   uint8_t HEADFREE_MODE :1 ;
 #endif
-#if defined(FIXEDWING) || defined(HELICOPTER)
+#if defined(FIXEDWING)
   uint8_t PASSTHRU_MODE :1 ;
 #endif
   uint8_t SMALL_ANGLES_25 :1 ;
@@ -156,13 +156,9 @@ typedef struct {
   uint8_t checksum;      // MUST BE ON LAST POSITION OF STRUCTURE !
 } global_conf_t;
 
-/*
- * D8 与 LGT 的 pins_arduino.h 宏定义冲突，改为 D_8.
- * Dolphin 2023.12.06
- // */
 struct pid_ {
-  uint8_t P_8;
-  uint8_t I_8;
+  uint8_t P8;
+  uint8_t I8;
   uint8_t D_8;
 };
 

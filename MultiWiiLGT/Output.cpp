@@ -19,28 +19,7 @@ void initializeServo();
 #if defined(PROMINI)
   uint8_t PWM_PIN[8] = {9,10,11,3,6,5,A2,12};   //for a quad+: rear,right,left,front
 #endif
-#if defined(PROMICRO)
-  #if !defined(HWPWM6)
-    #if defined(TEENSY20)
-      uint8_t PWM_PIN[8] = {14,15,9,12,22,18,16,17};   //for a quad+: rear,right,left,front
-    #elif defined(A32U4_4_HW_PWM_SERVOS)
-      uint8_t PWM_PIN[8] = {6,9,10,11,5,13,SW_PWM_P3,SW_PWM_P4};   //
-    #else
-    uint8_t PWM_PIN[8] = {9,10,5,6,4,A2,SW_PWM_P3,SW_PWM_P4};   //for a quad+: rear,right,left,front
-    #endif
-  #else
-    #if defined(TEENSY20)
-      uint8_t PWM_PIN[8] = {14,15,9,12,4,10,16,17};   //for a quad+: rear,right,left,front
-    #elif defined(A32U4_4_HW_PWM_SERVOS)
-      uint8_t PWM_PIN[8] = {6,9,10,11,5,13,SW_PWM_P3,SW_PWM_P4};   //
-    #else
-      uint8_t PWM_PIN[8] = {9,10,5,6,11,13,SW_PWM_P3,SW_PWM_P4};   //for a quad+: rear,right,left,front
-    #endif
-  #endif
-#endif
-#if defined(MEGA)
-  uint8_t PWM_PIN[8] = {3,5,6,2,7,8,9,10};      //for a quad+: rear,right,left,front   //+ for y6: 7:under right  8:under left
-#endif
+
 
 /**************************************************************************************/
 /***************         Software PWM & Servo variables            ********************/
@@ -81,16 +60,20 @@ void initializeServo();
   #if defined(HW_PWM_SERVOS)
     // hw servo pwm does not need atomicServo[]
   #elif defined(PROMINI) || (defined(PROMICRO) && defined(HWPWM6))
-    #if defined(AIRPLANE) || defined(HELICOPTER)
+    #if defined(AIRPLANE)
       // To prevent motor to start at reset. atomicServo[7]=5 or 249 if reversed servo
-      volatile uint8_t atomicServo[8] = {125,125,125,125,125,125,125,5};
+      // volatile uint8_t atomicServo[8] = {125,125,125,125,125,125,125,5};
+      // 前2个是电机。Dolphin 2024.03.26
+      volatile uint8_t atomicServo[8] = {5,5,125,125,125,125,125,125};
     #else
       volatile uint8_t atomicServo[8] = {125,125,125,125,125,125,125,125};
     #endif
   #else
-    #if defined(AIRPLANE)|| defined(HELICOPTER)
+    #if defined(AIRPLANE)
       // To prevent motor to start at reset. atomicServo[7]=5 or 249 if reversed servo
-      volatile uint16_t atomicServo[8] = {8000,8000,8000,8000,8000,8000,8000,320};
+      // volatile uint16_t atomicServo[8] = {8000,8000,8000,8000,8000,8000,8000,320};
+      // 前2个是电机。Dolphin 2024.03.26
+      volatile uint16_t atomicServo[8] = {320,320,8000,8000,8000,8000,8000,8000};
     #else
       volatile uint16_t atomicServo[8] = {8000,8000,8000,8000,8000,8000,8000,8000};
     #endif
@@ -176,48 +159,6 @@ void writeServos() {
         }
       #endif
     #endif
-    // write HW PWM servos for the mega
-    #if defined(MEGA) && defined(MEGA_HW_PWM_SERVOS)
-      #if (PRI_SERVO_FROM == 1 || SEC_SERVO_FROM == 1) 
-        OCR5C = servo[0];
-      #endif 
-      #if (PRI_SERVO_FROM <= 2 && PRI_SERVO_TO >= 2) || (SEC_SERVO_FROM <= 2 && SEC_SERVO_TO >= 2) 
-        OCR5B = servo[1];
-      #endif 
-      #if (PRI_SERVO_FROM <= 3 && PRI_SERVO_TO >= 3) || (SEC_SERVO_FROM <= 3 && SEC_SERVO_TO >= 3) 
-        OCR5A = servo[2];
-      #endif 
-      #if (PRI_SERVO_FROM <= 4 && PRI_SERVO_TO >= 4) || (SEC_SERVO_FROM <= 4 && SEC_SERVO_TO >= 4) 
-        OCR1A = servo[3];
-      #endif 
-      #if (PRI_SERVO_FROM <= 5 && PRI_SERVO_TO >= 5) || (SEC_SERVO_FROM <= 5 && SEC_SERVO_TO >= 5) 
-        OCR1B = servo[4];
-      #endif 
-      #if (PRI_SERVO_FROM <= 6 && PRI_SERVO_TO >= 6) || (SEC_SERVO_FROM <= 6 && SEC_SERVO_TO >= 6) 
-        OCR4A = servo[5];
-      #endif 
-      #if (PRI_SERVO_FROM <= 7 && PRI_SERVO_TO >= 7) || (SEC_SERVO_FROM <= 7 && SEC_SERVO_TO >= 7) 
-        OCR4B = servo[6];
-      #endif 
-      #if (PRI_SERVO_FROM <= 8 && PRI_SERVO_TO >= 8) || (SEC_SERVO_FROM <= 8 && SEC_SERVO_TO >= 8) 
-        OCR4C = servo[7];
-      #endif
-    #endif
-    // write HW PWM servos for the promicro
-    #if defined(PROMICRO) && defined(A32U4_4_HW_PWM_SERVOS)
-      #if (PRI_SERVO_FROM <= 7 && PRI_SERVO_TO >= 7)
-        OCR1A = servo[6];// Pin 9
-      #endif
-      #if (PRI_SERVO_FROM <= 5 && PRI_SERVO_TO >= 5)
-        OCR1B = servo[4];// Pin 10
-      #endif
-      #if (PRI_SERVO_FROM <= 6 && PRI_SERVO_TO >= 6)
-        OCR3A = servo[5];// Pin 5
-      #endif
-      #if (PRI_SERVO_FROM <= 4 && PRI_SERVO_TO >= 4)
-        OCR1C = servo[3];// Pin 11
-      #endif
-    #endif
   #endif
 }
 
@@ -225,184 +166,6 @@ void writeServos() {
 /************  Writes the Motors values to the PWM compare register  ******************/
 /**************************************************************************************/
 void writeMotors() { // [1000;2000] => [125;250]
-  /****************  Specific PWM Timers & Registers for the MEGA's   *******************/
-  #if defined(MEGA)// [1000:2000] => [8000:16000] for timer 3 & 4 for mega
-    #if (NUMBER_MOTOR > 0) 
-      #ifndef EXT_MOTOR_RANGE 
-        OCR3C = motor[0]<<3; //  pin 3
-      #else
-        OCR3C = ((motor[0]<<4) - 16000);
-      #endif
-    #endif
-    #if (NUMBER_MOTOR > 1)
-      #ifndef EXT_MOTOR_RANGE 
-        OCR3A = motor[1]<<3; //  pin 5
-      #else
-        OCR3A = ((motor[1]<<4) - 16000);
-      #endif
-    #endif
-    #if (NUMBER_MOTOR > 2)
-      #ifndef EXT_MOTOR_RANGE 
-        OCR4A = motor[2]<<3; //  pin 6
-      #else
-        OCR4A = ((motor[2]<<4) - 16000);
-      #endif
-    #endif
-    #if (NUMBER_MOTOR > 3)
-      #ifndef EXT_MOTOR_RANGE 
-        OCR3B = motor[3]<<3; //  pin 2
-      #else
-        OCR3B = ((motor[3]<<4) - 16000);
-      #endif
-    #endif
-    #if (NUMBER_MOTOR > 4)
-      #ifndef EXT_MOTOR_RANGE 
-        OCR4B = motor[4]<<3; //  pin 7
-        OCR4C = motor[5]<<3; //  pin 8
-      #else
-        OCR4B = ((motor[4]<<4) - 16000);
-        OCR4C = ((motor[5]<<4) - 16000);
-      #endif
-    #endif
-    #if (NUMBER_MOTOR > 6)
-      #ifndef EXT_MOTOR_RANGE 
-        OCR2B = motor[6]>>3; //  pin 9
-        OCR2A = motor[7]>>3; //  pin 10
-      #else
-        OCR2B = (motor[6]>>2) - 250;
-        OCR2A = (motor[7]>>2) - 250;
-      #endif
-    #endif
-  #endif
-
-  /******** Specific PWM Timers & Registers for the atmega32u4 (Promicro)   ************/
-  #if defined(PROMICRO)
-    uint16_t Temp2;
-    Temp2 = motor[3] - 1000;
-    #if (NUMBER_MOTOR > 0)
-      #if defined(A32U4_4_HW_PWM_SERVOS)
-        // write motor0 to pin 6
-        // Timer 4 A & D [1000:2000] => [1000:2000]
-        #ifndef EXT_MOTOR_RANGE
-          TC4H = motor[0]>>8; OCR4D = (motor[0]&0xFF); //  pin 6
-        #else
-          TC4H = (((motor[0]-1000)<<1)+16)>>8; OCR4D = ((((motor[0]-1000)<<1)+16)&0xFF); //  pin 6
-        #endif
-      #else
-        // Timer 1 A & B [1000:2000] => [8000:16000]
-        #ifdef EXT_MOTOR_RANGE
-          OCR1A = ((motor[0]<<4) - 16000) + 128;
-        #elif defined(EXT_MOTOR_64KHZ)
-          OCR1A = (motor[0] - 1000) >> 2; // max = 255
-        #elif defined(EXT_MOTOR_32KHZ)
-          OCR1A = (motor[0] - 1000) >> 1; // max = 511
-        #elif defined(EXT_MOTOR_16KHZ)
-          OCR1A = motor[0] - 1000;        //  pin 9
-        #elif defined(EXT_MOTOR_8KHZ)
-          OCR1A = (motor[0]-1000) << 1;   //  pin 9
-        #else
-          OCR1A = motor[0]<<3; //  pin 9
-        #endif
-      #endif
-    #endif
-    #if (NUMBER_MOTOR > 1)
-      #ifdef EXT_MOTOR_RANGE 
-        OCR1B = ((motor[1]<<4) - 16000) + 128;
-      #elif defined(EXT_MOTOR_64KHZ)
-        OCR1B = (motor[1] - 1000) >> 2;
-      #elif defined(EXT_MOTOR_32KHZ)
-        OCR1B = (motor[1] - 1000) >> 1;
-      #elif defined(EXT_MOTOR_16KHZ)
-        OCR1B = motor[1] - 1000;        //  pin 10
-      #elif defined(EXT_MOTOR_8KHZ)
-        OCR1B = (motor[1]-1000) << 1;   //  pin 10
-      #else
-        OCR1B = motor[1]<<3; //  pin 10
-      #endif
-    #endif
-    #if (NUMBER_MOTOR > 2) // Timer 4 A & D [1000:2000] => [1000:2000]
-      #if !defined(HWPWM6)
-        // to write values > 255 to timer 4 A/B we need to split the bytes
-        #ifndef EXT_MOTOR_RANGE 
-          TC4H = (2047-motor[2])>>8; OCR4A = ((2047-motor[2])&0xFF); //  pin 5
-        #else
-          TC4H = 2047-(((motor[2]-1000)<<1)+16)>>8; OCR4A = (2047-(((motor[2]-1000)<<1)+16)&0xFF); //  pin 5
-        #endif
-      #else
-        #ifdef EXT_MOTOR_RANGE 
-          OCR3A = ((motor[2]<<4) - 16000) + 128;
-        #elif defined(EXT_MOTOR_64KHZ)
-          OCR3A = (motor[2] - 1000) >> 2;
-        #elif defined(EXT_MOTOR_32KHZ)
-          OCR3A = (motor[2] - 1000) >> 1;
-        #elif defined(EXT_MOTOR_16KHZ)
-          OCR3A = motor[2] - 1000;        //  pin 5
-        #elif defined(EXT_MOTOR_8KHZ)
-          OCR3A = (motor[2]-1000) << 1;   //  pin 5
-        #else
-          OCR3A = motor[2]<<3; //  pin 5
-        #endif
-      #endif
-    #endif
-    #if (NUMBER_MOTOR > 3)
-      #ifdef EXT_MOTOR_RANGE 
-        TC4H = (((motor[3]-1000)<<1)+16)>>8; OCR4D = ((((motor[3]-1000)<<1)+16)&0xFF); //  pin 6
-      #elif defined(EXT_MOTOR_64KHZ)
-        Temp2 = Temp2 >> 2;
-        TC4H = Temp2 >> 8;
-        OCR4D = Temp2 & 0xFF;           //  pin 6
-      #elif defined(EXT_MOTOR_32KHZ)
-        Temp2 = Temp2 >> 1;
-        TC4H = Temp2 >> 8;
-        OCR4D = Temp2 & 0xFF;           //  pin 6
-      #elif defined(EXT_MOTOR_16KHZ)
-        TC4H = Temp2 >> 8;
-        OCR4D = Temp2 & 0xFF;           //  pin 6
-      #elif defined(EXT_MOTOR_8KHZ)
-        TC4H = Temp2 >> 8;
-        OCR4D = Temp2 & 0xFF;           //  pin 6
-      #else
-        TC4H = motor[3]>>8; OCR4D = (motor[3]&0xFF); //  pin 6
-      #endif
-    #endif    
-    #if (NUMBER_MOTOR > 4)
-      #if !defined(HWPWM6)
-        #if (NUMBER_MOTOR == 6) && !defined(SERVO)
-          atomicPWM_PIN5_highState = motor[4]<<3;
-          atomicPWM_PIN5_lowState = 16383-atomicPWM_PIN5_highState;
-          atomicPWM_PIN6_highState = motor[5]<<3;
-          atomicPWM_PIN6_lowState = 16383-atomicPWM_PIN6_highState;      
-        #else
-          atomicPWM_PIN5_highState = ((motor[4]-1000)<<4)+320;
-          atomicPWM_PIN5_lowState = 15743-atomicPWM_PIN5_highState;
-          atomicPWM_PIN6_highState = ((motor[5]-1000)<<4)+320;
-          atomicPWM_PIN6_lowState = 15743-atomicPWM_PIN6_highState;        
-        #endif
-      #else
-        #ifndef EXT_MOTOR_RANGE 
-          OCR1C = motor[4]<<3; //  pin 11
-          TC4H = motor[5]>>8; OCR4A = (motor[5]&0xFF); //  pin 13  
-        #else
-          OCR1C = ((motor[4]<<4) - 16000) + 128;
-          TC4H = (((motor[5]-1000)<<1)+16)>>8; OCR4A = ((((motor[5]-1000)<<1)+16)&0xFF); //  pin 13       
-        #endif  
-      #endif
-    #endif
-    #if (NUMBER_MOTOR > 6)
-      #if !defined(HWPWM6)
-        atomicPWM_PINA2_highState = ((motor[6]-1000)<<4)+320;
-        atomicPWM_PINA2_lowState = 15743-atomicPWM_PINA2_highState;
-        atomicPWM_PIN12_highState = ((motor[7]-1000)<<4)+320;
-        atomicPWM_PIN12_lowState = 15743-atomicPWM_PIN12_highState;
-      #else
-        atomicPWM_PINA2_highState = ((motor[6]-1000)>>2)+5;
-        atomicPWM_PINA2_lowState = 245-atomicPWM_PINA2_highState;
-        atomicPWM_PIN12_highState = ((motor[7]-1000)>>2)+5;
-        atomicPWM_PIN12_lowState = 245-atomicPWM_PIN12_highState;     
-      #endif
-    #endif
-  #endif
-
   /********  Specific PWM Timers & Registers for the atmega328P (Promini)   ************/
   #if defined(PROMINI)
     #if (NUMBER_MOTOR > 0)
@@ -487,8 +250,10 @@ void writeMotors() { // [1000;2000] => [125;250]
 /**************************************************************************************/
 /************          Writes the mincommand to all Motors           ******************/
 /**************************************************************************************/
-void writeAllMotors(int16_t mc) {   // Sends commands to all motors
-  for (uint8_t i =0;i<NUMBER_MOTOR;i++) {
+void writeAllMotors(int16_t mc) 
+{   // Sends commands to all motors
+  for (uint8_t i =0;i<NUMBER_MOTOR;i++) 
+  {
     motor[i]=mc;
   }
   writeMotors();
@@ -497,139 +262,14 @@ void writeAllMotors(int16_t mc) {   // Sends commands to all motors
 /**************************************************************************************/
 /************        Initialize the PWM Timers and Registers         ******************/
 /**************************************************************************************/
-void initOutput() {
+void initOutput() 
+{
   /****************            mark all PWM pins as Output             ******************/
-  for(uint8_t i=0;i<NUMBER_MOTOR;i++) {
+  for(uint8_t i=0;i<NUMBER_MOTOR;i++) 
+  {
     pinMode(PWM_PIN[i],OUTPUT);
   }
-    
-  /****************  Specific PWM Timers & Registers for the MEGA's    ******************/
-  #if defined(MEGA)
-    #if (NUMBER_MOTOR > 0)
-      // init 16bit timer 3
-      TCCR3A |= (1<<WGM31); // phase correct mode
-      TCCR3A &= ~(1<<WGM30);
-      TCCR3B |= (1<<WGM33);
-      TCCR3B &= ~(1<<CS31); // no prescaler
-      ICR3   |= 0x3FFF; // TOP to 16383;      
-      
-      TCCR3A |= _BV(COM3C1); // connect pin 3 to timer 3 channel C
-    #endif
-    #if (NUMBER_MOTOR > 1)
-      TCCR3A |= _BV(COM3A1); // connect pin 5 to timer 3 channel A
-    #endif
-    #if (NUMBER_MOTOR > 2)
-      // init 16bit timer 4
-      TCCR4A |= (1<<WGM41); // phase correct mode
-      TCCR4A &= ~(1<<WGM40);
-      TCCR4B |= (1<<WGM43);
-      TCCR4B &= ~(1<<CS41); // no prescaler
-      ICR4   |= 0x3FFF; // TOP to 16383;    
-      
-      TCCR4A |= _BV(COM4A1); // connect pin 6 to timer 4 channel A
-    #endif
-    #if (NUMBER_MOTOR > 3)
-      TCCR3A |= _BV(COM3B1); // connect pin 2 to timer 3 channel B
-    #endif
-    #if (NUMBER_MOTOR > 4)
-      TCCR4A |= _BV(COM4B1); // connect pin 7 to timer 4 channel B
-      TCCR4A |= _BV(COM4C1); // connect pin 8 to timer 4 channel C
-    #endif
-    #if (NUMBER_MOTOR > 6)
-      // timer 2 is a 8bit timer so we cant change its range 
-      TCCR2A |= _BV(COM2B1); // connect pin 9 to timer 2 channel B
-      TCCR2A |= _BV(COM2A1); // connect pin 10 to timer 2 channel A
-    #endif
-  #endif
-  
-  /******** Specific PWM Timers & Registers for the atmega32u4 (Promicro)   ************/
-  #if defined(PROMICRO)
-    #if defined(EXT_MOTOR_64KHZ) || defined(EXT_MOTOR_32KHZ) || defined(EXT_MOTOR_16KHZ) || defined(EXT_MOTOR_8KHZ)
-      TCCR1A = (1<<WGM11);
-      TCCR1B = (1<<WGM13) | (1<<WGM12) | (1<<CS10);
-      TCCR3A = (1<<WGM31);
-      TCCR3B = (1<<WGM33) | (1<<WGM32) | (1<<CS30);
-      #if defined(EXT_MOTOR_64KHZ)
-        ICR1   = 0x00FF; // TOP to 255;
-        ICR3   = 0x00FF; // TOP to 255;
-        TC4H = 0x00;
-        OCR4C = 0xFF; // phase and frequency correct mode & top to 255
-        TCCR4B = (1<<CS40);             // prescaler to 1
-      #elif defined(EXT_MOTOR_32KHZ)
-        ICR1   = 0x01FF; // TOP to 511;
-        ICR3   = 0x01FF; // TOP to 511;
-        TC4H = 0x01;
-        OCR4C = 0xFF; // phase and frequency correct mode & top to 511
-        TCCR4B = (1<<CS40);             // prescaler to 1
-      #elif defined(EXT_MOTOR_16KHZ)
-        ICR1   = 0x03FF; // TOP to 1023;
-        ICR3   = 0x03FF; // TOP to 1023;
-        TC4H = 0x03;
-        OCR4C = 0xFF; // phase and frequency correct mode & top to 1023
-        TCCR4B = (1<<CS40);             // prescaler to 1
-      #elif defined(EXT_MOTOR_8KHZ)
-        ICR1   = 0x07FF; // TOP to 2046;
-        ICR3   = 0x07FF; // TOP to 2046;
-        TC4H = 0x3;
-        OCR4C = 0xFF; // phase and frequency correct mode
-        TCCR4B = (1<<CS41);             // prescaler to 2
-      #endif
-      TCCR1A |= _BV(COM1A1); // connect pin 9 to timer 1 channel A
-      TCCR1A |= _BV(COM1B1); // connect pin 10 to timer 1 channel B
-      TCCR3A |= _BV(COM3A1); // connect pin 5 to timer 3 channel A
-      TCCR4D = 0;
-      TCCR4C |= (1<<COM4D1)|(1<<PWM4D); // connect pin 6 to timer 4 channel D
-    #else
-      #if (NUMBER_MOTOR > 0) && ( !defined(A32U4_4_HW_PWM_SERVOS) )
-        TCCR1A |= (1<<WGM11); // phase correct mode & no prescaler
-        TCCR1A &= ~(1<<WGM10);
-        TCCR1B &= ~(1<<WGM12) &  ~(1<<CS11) & ~(1<<CS12);
-        TCCR1B |= (1<<WGM13) | (1<<CS10); 
-        ICR1   |= 0x3FFF; // TOP to 16383;     
-        TCCR1A |= _BV(COM1A1); // connect pin 9 to timer 1 channel A
-      #endif
-      #if (NUMBER_MOTOR > 1)
-        TCCR1A |= _BV(COM1B1); // connect pin 10 to timer 1 channel B
-      #endif
-      #if (NUMBER_MOTOR > 2)
-        #if !defined(HWPWM6) // timer 4A
-          TCCR4E |= (1<<ENHC4); // enhanced pwm mode
-          TCCR4B &= ~(1<<CS41); TCCR4B |= (1<<CS42)|(1<<CS40); // prescaler to 16
-          TCCR4D |= (1<<WGM40); TC4H = 0x3; OCR4C = 0xFF; // phase and frequency correct mode & top to 1023 but with enhanced pwm mode we have 2047
-          TCCR4A |= (1<<COM4A0)|(1<<PWM4A); // connect pin 5 to timer 4 channel A 
-        #else // timer 3A
-          TCCR3A |= (1<<WGM31); // phase correct mode & no prescaler
-          TCCR3A &= ~(1<<WGM30);
-          TCCR3B &= ~(1<<WGM32) &  ~(1<<CS31) & ~(1<<CS32);
-          TCCR3B |= (1<<WGM33) | (1<<CS30); 
-          ICR3   |= 0x3FFF; // TOP to 16383;     
-          TCCR3A |= _BV(COM3A1); // connect pin 5 to timer 3 channel A    
-        #endif 
-      #endif
-      #if (NUMBER_MOTOR > 3) || ( (NUMBER_MOTOR > 0) && defined(A32U4_4_HW_PWM_SERVOS) )
-        #if defined(HWPWM6) 
-          TCCR4E |= (1<<ENHC4); // enhanced pwm mode
-          TCCR4B &= ~(1<<CS41); TCCR4B |= (1<<CS42)|(1<<CS40); // prescaler to 16
-          TCCR4D |= (1<<WGM40); TC4H = 0x3; OCR4C = 0xFF; // phase and frequency correct mode & top to 1023 but with enhanced pwm mode we have 2047
-        #endif
-        TCCR4C |= (1<<COM4D1)|(1<<PWM4D); // connect pin 6 to timer 4 channel D
-      #endif
-      #if (NUMBER_MOTOR > 4)
-        #if defined(HWPWM6) 
-          TCCR1A |= _BV(COM1C1); // connect pin 11 to timer 1 channel C
-          TCCR4A |= (1<<COM4A1)|(1<<PWM4A); // connect pin 13 to timer 4 channel A 
-        #else
-          initializeSoftPWM();
-        #endif
-      #endif
-      #if (NUMBER_MOTOR > 6)
-        #if defined(HWPWM6) 
-          initializeSoftPWM();
-        #endif
-      #endif
-    #endif
-  #endif
-  
+
   /********  Specific PWM Timers & Registers for the atmega328P (Promini)   ************/
   #if defined(PROMINI)
     #if defined(EXT_MOTOR_32KHZ)
@@ -647,6 +287,8 @@ void initOutput() {
       TCCR1B = (1<<WGM13) | (1<<CS10);
       ICR1   = 0x1FE0; // TOP to 8184;     
       TCCR2B =  (1<<CS20) | (1<<CS21);
+    #else
+      TCCR2B =  (5<<CS20); // clkt2s/128，来自预分频器。Dolphin 2024.04.02
     #endif
 
     #if (NUMBER_MOTOR > 0)
@@ -734,151 +376,7 @@ void initializeServo() {
       #define SERVO_CHANNEL OCR0A
       #define SERVO_1K_US 250
     #endif
-    #if (defined(PROMICRO) && !defined(HWPWM6)) // uses timer 3 Comperator A (11 bit)
-      TCCR3A &= ~(1<<WGM30) & ~(1<<WGM31); //normal counting & no prescaler
-      TCCR3B &= ~(1<<WGM32) & ~(1<<CS31) & ~(1<<CS32) & ~(1<<WGM33);
-      TCCR3B |= (1<<CS30);   
-      TIMSK3 |= (1<<OCIE3A); // Enable CTC interrupt 
-      #define SERVO_ISR TIMER3_COMPA_vect
-      #define SERVO_CHANNEL OCR3A
-      #define SERVO_1K_US 16000 
-    #endif
-    #if defined(MEGA) // uses timer 5 Comperator A (11 bit)
-      TCCR5A &= ~(1<<WGM50) & ~(1<<WGM51); //normal counting & no prescaler
-      TCCR5B &= ~(1<<WGM52) & ~(1<<CS51) & ~(1<<CS52) & ~(1<<WGM53);
-      TCCR5B |= (1<<CS50);   
-      TIMSK5 |= (1<<OCIE5A); // Enable CTC interrupt  
-      #define SERVO_ISR TIMER5_COMPA_vect
-      #define SERVO_CHANNEL OCR5A
-      #define SERVO_1K_US 16000 
-    #endif
   #endif
-
-  #if defined(MEGA) && defined(MEGA_HW_PWM_SERVOS)
-    #if defined(SERVO_RFR_RATE)
-      #if (SERVO_RFR_RATE < 20)
-        #define SERVO_RFR_RATE 20
-      #endif
-      #if (SERVO_RFR_RATE > 400)
-        #define SERVO_RFR_RATE 400
-      #endif
-    #else
-      #if defined(SERVO_RFR_50HZ)
-        #define SERVO_RFR_RATE 50
-      #elif defined(SERVO_RFR_160HZ)
-        #define SERVO_RFR_RATE 160
-      #elif defined(SERVO_RFR_300HZ)
-        #define SERVO_RFR_RATE 300
-      #endif
-    #endif  
-    #define SERVO_TOP_VAL (uint16_t)(1000000L / SERVO_RFR_RATE)
-    // init Timer 5, 1 and 4 of the mega for hw PWM
-    TIMSK5 &= ~(1<<OCIE5A); // Disable software PWM  
-    #if (PRI_SERVO_TO >= 1) || (SEC_SERVO_TO >= 1)
-      TCCR5A |= (1<<WGM51);   // phase correct mode & prescaler to 8 = 1us resolution
-      TCCR5A &= ~(1<<WGM50);
-      TCCR5B &= ~(1<<WGM52) &  ~(1<<CS50) & ~(1<<CS52);
-      TCCR5B |= (1<<WGM53) | (1<<CS51);
-      ICR5 = SERVO_TOP_VAL;
-      #if (PRI_SERVO_FROM == 1 || SEC_SERVO_FROM == 1) 
-        pinMode(44,OUTPUT);
-        TCCR5A |= (1<<COM5C1); // pin 44
-      #endif
-      #if (PRI_SERVO_FROM <= 2 && PRI_SERVO_TO >= 2) || (SEC_SERVO_FROM <= 2 && SEC_SERVO_TO >= 2) 
-        pinMode(45,OUTPUT);
-        TCCR5A |= (1<<COM5B1); // pin 45
-      #endif
-      #if (PRI_SERVO_FROM <= 3 && PRI_SERVO_TO >= 3) || (SEC_SERVO_FROM <= 3 && SEC_SERVO_TO >= 3) 
-        pinMode(46,OUTPUT);
-        TCCR5A |= (1<<COM5A1); // pin 46
-      #endif
-    #endif
-    #if (PRI_SERVO_TO >= 4) || (SEC_SERVO_TO >= 4) 
-      TCCR1A |= (1<<WGM11); // phase correct mode & prescaler to 8
-      TCCR1A &= ~(1<<WGM10);
-      TCCR1B &= ~(1<<WGM12) &  ~(1<<CS10) & ~(1<<CS12);
-      TCCR1B |= (1<<WGM13) | (1<<CS11);
-      ICR1 = SERVO_TOP_VAL;
-      #if (PRI_SERVO_FROM <= 4 && PRI_SERVO_TO >= 4) || (SEC_SERVO_FROM <= 4 && SEC_SERVO_TO >= 4) 
-        pinMode(11, OUTPUT);
-        TCCR1A |= (1<<COM1A1); // pin 11
-      #endif
-      #if (PRI_SERVO_FROM <= 5 && PRI_SERVO_TO >= 5) || (SEC_SERVO_FROM <= 5 && SEC_SERVO_TO >= 5) 
-        pinMode(12,OUTPUT);
-        TCCR1A |= (1<<COM1B1); // pin 12
-      #endif
-    #endif
-    #if (PRI_SERVO_TO >= 6) || (SEC_SERVO_TO >= 6) 
-      // init 16bit timer 4
-      TCCR4A |= (1<<WGM41); // phase correct mode
-      TCCR4A &= ~(1<<WGM40);
-      TCCR4B &= ~(1<<WGM42) &  ~(1<<CS40) & ~(1<<CS42);
-      TCCR4B |= (1<<WGM43) | (1<<CS41);
-      ICR4 = SERVO_TOP_VAL;
-      #if (PRI_SERVO_FROM <= 6 && PRI_SERVO_TO >= 6) || (SEC_SERVO_FROM <= 6 && SEC_SERVO_TO >= 6) 
-        pinMode(6,OUTPUT);
-        TCCR4A |= _BV(COM4A1); // connect pin 6 to timer 4 channel A
-      #endif
-      #if (PRI_SERVO_FROM <= 7 && PRI_SERVO_TO >= 7) || (SEC_SERVO_FROM <= 7 && SEC_SERVO_TO >= 7) 
-        pinMode(7,OUTPUT);
-        TCCR4A |= _BV(COM4B1); // connect pin 7 to timer 4 channel B
-      #endif
-      #if (PRI_SERVO_FROM <= 8 && PRI_SERVO_TO >= 8) || (SEC_SERVO_FROM <= 8 && SEC_SERVO_TO >= 8) 
-        #if defined(AIRPLANE) || defined(HELICOPTER)
-          servo[7] =  MINCOMMAND;    // Trhottle at minimum for airplane and heli
-          OCR4C = MINCOMMAND;
-        #endif  
-        pinMode(8,OUTPUT);
-        TCCR4A |= _BV(COM4C1); // connect pin 8 to timer 4 channel C
-      #endif
-    #endif 
-  #endif // mega hw pwm
-
-  #if defined(PROMICRO) && defined(A32U4_4_HW_PWM_SERVOS)
-    // atm. always initialize 4 servos to pins 9, 10, 11, 5
-    TIMSK1 &= ~(1<<OCIE1A) & ~(1<<OCIE1B) & ~(1<<OCIE1C);
-    TCCR1A |= (1<<WGM11); // phase correct mode & prescaler to 8
-    TCCR1A &= ~(1<<WGM10);
-    TCCR1B &= ~(1<<WGM12) &  ~(1<<CS10) & ~(1<<CS12);
-    TCCR1B |= (1<<WGM13) | (1<<CS11);
-    pinMode(9,OUTPUT);
-    TCCR1A |= (1<<COM1A1); // pin 9
-    pinMode(10,OUTPUT);
-    TCCR1A |= (1<<COM1B1); // pin 10
-    pinMode(11,OUTPUT);
-    TCCR1A |= (1<<COM1C1); // pin 11
-
-    TCCR3A |= (1<<WGM31); // phase correct mode & prescaler to 8
-    TCCR3A &= ~(1<<WGM30);
-    TCCR3B &= ~(1<<WGM32) &  ~(1<<CS30) & ~(1<<CS32);
-    TCCR3B |= (1<<WGM33) | (1<<CS31);
-    pinMode(5,OUTPUT);
-    TCCR3A |= (1<<COM3A1); // pin 5
-    #if defined(SERVO_RFR_RATE)
-      #if (SERVO_RFR_RATE < 50) || (SERVO_RFR_RATE > 400)
-        #error "* invalid SERVO_RFR_RATE specified"
-      #endif
-      #define SERVO_TOP_VAL (uint16_t)(1000000L / SERVO_RFR_RATE)
-    #elif defined(SERVO_RFR_50HZ)
-      #define SERVO_TOP_VAL 16700
-    #elif defined(SERVO_RFR_160HZ)
-      #define SERVO_TOP_VAL 6200
-    #elif defined(SERVO_RFR_300HZ)
-      #define SERVO_TOP_VAL 3300
-    #else
-      #error "* must set SERVO_RFR_RATE or one of the fixed refresh rates of 50, 160 or 300 Hz"
-    #endif
-    #if defined(SERVO_PIN5_RFR_RATE)
-      #if (SERVO_PIN5_RFR_RATE < 50) || (SERVO_PIN5_RFR_RATE > 400)
-        #error "* invalid SERVO_PIN5_RFR_RATE specified"
-      #endif
-      #define SERVO_PIN5_TOP_VAL (uint16_t)(1000000L / SERVO_PIN5_RFR_RATE)
-    #else
-      #define SERVO_PIN5_TOP_VAL SERVO_TOP_VAL
-    #endif
-    ICR1   = SERVO_TOP_VAL;      // set TOP timer 1
-    ICR3   = SERVO_PIN5_TOP_VAL; // set TOP timer 3
-  #endif // promicro hw pwm
 }
 
 /**************************************************************************************/
@@ -1117,7 +615,8 @@ void initializeServo() {
 /**************************************************************************************/
 
 // get servo middle point from Config or from RC-Data
-int16_t get_middle(uint8_t nr) {
+int16_t get_middle(uint8_t nr) 
+{
   return (conf.servoConf[nr].middle < RC_CHANS) ? rcData[conf.servoConf[nr].middle] : conf.servoConf[nr].middle;
 }
 
@@ -1247,7 +746,27 @@ void mixTable() {
     } else {
       servo[7] = constrain(rcCommand[THROTTLE], conf.minthrottle, MAXTHROTTLE);
     }
+
+#if defined(EXT_MOTOR_1KHZ)
+    #define MOTOR_RAMP  2
+    // motor[] 与 servo[] 都是有符号整数，不用担心出现负数溢出。Dolphin 2024.04.09
+    if (servo[7] - motor[0] > MOTOR_RAMP)
+    {
+      motor[0] += MOTOR_RAMP;
+    }
+    else if (motor[0] - servo[7] > MOTOR_RAMP)
+    {
+      motor[0] -= MOTOR_RAMP;
+    }
+    else 
+    {
+      motor[0] = servo[7];
+    }
+#else
     motor[0] = servo[7];
+#endif    
+
+    motor[1] = motor[0];
 
     // Flapperon Controll TODO - optimalisation
     int16_t flapperons[2]={0,0};
@@ -1298,6 +817,7 @@ void mixTable() {
       servo[i]  = ((int32_t)conf.servoConf[i].rate * servo[i])/100L;  // servo rates
       servo[i] += get_middle(i);
     }
+
   #elif defined( SINGLECOPTER )
     /***************************          Single & DualCopter          ******************************/
     // Singlecopter
@@ -1327,112 +847,6 @@ void mixTable() {
     motor[0] = PIDMIX(0,0,-1);                                 //  Pin D9
     motor[1] = PIDMIX(0,0,+1);                                 //  Pin D10
 
-  #elif defined( HELICOPTER )
-    /*****************************               HELICOPTERS               **************************************/
-   // Common controlls for Helicopters
-    int16_t heliRoll,heliNick;
-    int16_t collRange[3] = COLLECTIVE_RANGE;
-    static int16_t   collective;
-    #ifdef GOVERNOR_P
-      static int16_t last_collective = 0, delta_collective = 0, governorThrottle = 0;
-    #endif
-    /***************************
-     * servo settings Heli.
-     ***************************/
-
-    // Limit Collective range up/down
-    int16_t collect = rcData[COLLECTIVE_PITCH] - (1500 + collRange[1]);
-    if   (collect>0) {
-      collective = collect * (collRange[2]*0.01);
-    } else{
-      collective = collect * (collRange[0]*0.01);
-    }
-
-    // maybe collective range can be replaced replaced by this ?
-    //collective = rcData[COLLECTIVE_PITCH] - get_middle(7);               // zero pitch offset
-    //collective = ((int32_t)conf.servoConf[7].rate * collective)/100L;    // collective range
-    
-    #ifdef GOVERNOR_P
-      delta_collective = collective - last_collective;
-      last_collective = collective;
-      if (! f.ARMED || ! rcOptions[BOXGOV] || (rcCommand[THROTTLE] < conf.minthrottle) )
-        governorThrottle = 0; // clear subito
-      else if (delta_collective > 0) {
-        governorThrottle += delta_collective * conf.governorP; // attack
-        // avoid overshooting governor (would result in overly long decay phase)
-        if (rcCommand[THROTTLE] + governorThrottle > MAXTHROTTLE) governorThrottle = MAXTHROTTLE - rcCommand[THROTTLE];
-      } else {
-        static uint8_t d = 0;
-        if (! (++d % conf.governorD)) governorThrottle -= 10; // decay; signal stepsize 10 should  be smooth on most ESCs
-      }
-      if (governorThrottle < 0) governorThrottle = 0; // always beware of negative impact of governor on throttle
-    #endif
-
-    if(f.PASSTHRU_MODE){ // Use Rcdata Without sensors
-      heliRoll = rcCommand[ROLL] ;
-      heliNick = rcCommand[PITCH];
-    } else{ // Assisted modes
-      heliRoll = axisPID[ROLL];
-      heliNick = axisPID[PITCH];
-    }
-
-    // Limit Maximum Rates for Heli
-    int16_t cRange[2] = CONTROL_RANGE;
-    heliRoll*= cRange[0]*0.01;
-    heliNick*= cRange[1]*0.01;
-
-    /* Throttle & YAW
-    ******************** */
-    // Yaw control is common for Heli 90 & 120
-    //servo[5] = (axisPID[YAW] * SERVODIR(5,1)) + conf.servoConf[5].middle;
-    // tail precomp from collective
-    int16_t acmd = abs(collective) - conf.yawCollPrecompDeadband; // abs collective minus deadband
-    if (acmd > 0 ){
-      servo[5] = (axisPID[YAW] * SERVODIR(5,1)) + conf.servoConf[5].middle + (acmd * conf.yawCollPrecomp)/10;
-    } else {
-      servo[5] = (axisPID[YAW] * SERVODIR(5,1)) + conf.servoConf[5].middle;
-    }
-    #if YAWMOTOR
-      servo[5] = constrain(servo[5], conf.servoConf[5].min, conf.servoConf[5].max); // limit the values
-      if (rcCommand[THROTTLE]<conf.minthrottle || !f.ARMED) {servo[5] = MINCOMMAND;} // Kill YawMotor
-    #endif
-    if (!f.ARMED){
-      servo[7] = MINCOMMAND;          // Kill throttle when disarmed
-    } else {
-      servo[7] = rcCommand[THROTTLE]; //   50hz ESC or servo
-      #ifdef GOVERNOR_P
-        servo[7] += governorThrottle;
-      #endif
-      servo[7] = constrain(servo[7], conf.minthrottle, MAXTHROTTLE);   //  limit min & max    }
-    }
-    #ifndef HELI_USE_SERVO_FOR_THROTTLE
-      motor[0] = servo[7];     // use real motor output - ESC capable
-      #if YAWMOTOR
-        motor[1] = servo[5];   // use motor2 output for YAWMOTOR
-      #endif
-    #endif
-
-    //              ( Collective, Pitch/Nick, Roll ) Change sign to invert
-    /************************************************************************************************************/
-    #define HeliXPIDMIX(Z,Y,X) ( (collRange[1] + collective)*Z + heliNick*Y +  heliRoll*X)/10
-    #ifdef HELI_120_CCPM
-      static int8_t nickMix[3] = SERVO_NICK;
-      static int8_t leftMix[3] = SERVO_LEFT;
-      static int8_t rightMix[3]= SERVO_RIGHT;
-
-      servo[3]  =  HeliXPIDMIX( ( SERVODIR(3,4) * nickMix[0]), SERVODIR(3,2) * nickMix[1], SERVODIR(3,1) * nickMix[2]);   //    NICK  servo
-      servo[4]  =  HeliXPIDMIX( ( SERVODIR(4,4) * leftMix[0]), SERVODIR(4,2) * leftMix[1], SERVODIR(4,1) * leftMix[2]);   //    LEFT  servo
-      servo[6]  =  HeliXPIDMIX( ( SERVODIR(6,4) * rightMix[0]),SERVODIR(6,2) * rightMix[1],SERVODIR(6,1) * rightMix[2]);  //    RIGHT servo
-    #endif
-    /************************************************************************************************************/
-    #ifdef HELI_90_DEG
-      servo[3]  = HeliXPIDMIX( +0, (conf.servoConf[3].rate/10), -0);      //     NICK  servo
-      servo[4]  = HeliXPIDMIX( +0, +0, (conf.servoConf[4].rate/10));      //     ROLL servo
-      servo[6]  = HeliXPIDMIX( (conf.servoConf[6].rate/10), +0, +0);      //     COLLECTIVE  servo
-    #endif
-    servo[3] += get_middle(3);
-    servo[4] += get_middle(4);
-    servo[6] += get_middle(6);
   #elif defined( GIMBAL )
     for(i=0;i<2;i++) {
       servo[i]  = ((int32_t)conf.servoConf[i].rate * att.angle[1-i]) /50L;
@@ -1502,14 +916,14 @@ void mixTable() {
   // add midpoint offset, then scale and limit servo outputs - except SERVO8 used commonly as Moror output
   // don't add offset for camtrig servo (SERVO3)
   #if defined(SERVO)
-    for(i=SERVO_START-1; i<SERVO_END; i++) {
-      if(i < 2) {
+    for(i=SERVO_START-1; i<SERVO_END; i++) 
+    {
+      if(i < 2) 
+      {
         servo[i] = map(servo[i], 1020,2000, conf.servoConf[i].min, conf.servoConf[i].max);   // servo travel scaling, only for gimbal servos
       }
-    #if defined(HELICOPTER) && (YAWMOTOR)
-      if(i != 5) // not limit YawMotor
-    #endif
-        servo[i] = constrain(servo[i], conf.servoConf[i].min, conf.servoConf[i].max); // limit the values
+
+      servo[i] = constrain(servo[i], conf.servoConf[i].min, conf.servoConf[i].max); // limit the values
     }
     #if defined(A0_A1_PIN_HEX) && (NUMBER_MOTOR == 6) && defined(PROMINI)
       servo[3] = servo[0];    // copy CamPitch value to propper output servo for A0_A1_PIN_HEX

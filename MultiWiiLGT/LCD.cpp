@@ -877,10 +877,6 @@ void initLCD() {
       strcpy_P(line2,PSTR("  OCTOFLAT-X"));
     #elif defined (AIRPLANE)
       strcpy_P(line2,PSTR("  AIRPLANE"));
-    #elif defined (HELI_120_CCPM)
-      strcpy_P(line2,PSTR("  HELI_120_CCPM"));
-    #elif defined (HELI_90_DEG)
-      strcpy_P(line2,PSTR("  HELI_90_DEG"));
     #elif defined(VTAIL4)
       strcpy_P(line2,PSTR("  VTAIL Quad"));
     #endif
@@ -1051,16 +1047,6 @@ const char PROGMEM lcd_param_text55 [] = "AUX govern";
 const char PROGMEM lcd_param_text56 [] = "AUX osd   ";
 // 53 to 61 reserved
 #endif
-#ifdef HELI_120_CCPM //                  0123456789
-const char PROGMEM lcd_param_text73 [] = "SERvTRIMn";
-const char PROGMEM lcd_param_text74 [] = "SERvTRIMl";
-const char PROGMEM lcd_param_text75 [] = "SERvTRIMy";
-const char PROGMEM lcd_param_text76 [] = "SERvTRIMr";
-const char PROGMEM lcd_param_text140 [] = "SERvINVn";
-const char PROGMEM lcd_param_text141 [] = "SERvINVl";
-const char PROGMEM lcd_param_text142 [] = "SERvINVy";
-const char PROGMEM lcd_param_text143 [] = "SERvINVr";
-#endif
 #ifdef GYRO_SMOOTHING //                 0123456789
 const char PROGMEM lcd_param_text80 [] = "GSMOOTH R ";
 const char PROGMEM lcd_param_text81 [] = "GSMOOTH P ";
@@ -1125,35 +1111,31 @@ const char PROGMEM lcd_param_text156 [] = "yawPrDead";
 //                                         012345678
 
 PROGMEM const void * const lcd_param_ptr_table [] = {
-  /*
-  * D8 与 LGT 的 pins_arduino.h 宏定义冲突，改为 D_8.
-  * Dolphin 2023.12.06
-  // */
-  &lcd_param_text01, &conf.pid[ROLL].P_8, &__P,
-  &lcd_param_text02, &conf.pid[ROLL].P_8, &__P,
-  &lcd_param_text03, &conf.pid[ROLL].I_8, &__I,
+  &lcd_param_text01, &conf.pid[ROLL].P8, &__P,
+  &lcd_param_text02, &conf.pid[ROLL].P8, &__P,
+  &lcd_param_text03, &conf.pid[ROLL].I8, &__I,
   &lcd_param_text04, &conf.pid[ROLL].D_8, &__D,
-  &lcd_param_text05, &conf.pid[PITCH].P_8, &__P,
-  &lcd_param_text06, &conf.pid[PITCH].I_8, &__I,
+  &lcd_param_text05, &conf.pid[PITCH].P8, &__P,
+  &lcd_param_text06, &conf.pid[PITCH].I8, &__I,
   &lcd_param_text07, &conf.pid[PITCH].D_8, &__D,
-  &lcd_param_text08, &conf.pid[YAW].P_8, &__P,
-  &lcd_param_text09, &conf.pid[YAW].I_8, &__I,
+  &lcd_param_text08, &conf.pid[YAW].P8, &__P,
+  &lcd_param_text09, &conf.pid[YAW].I8, &__I,
 #if (!(PID_CONTROLLER == 1)) || (!defined(COPTER_WITH_SERVO))
   &lcd_param_text10, &conf.pid[YAW].D_8, &__D,
 #endif
 #if BARO && (!defined(SUPPRESS_BARO_ALTHOLD))
-  &lcd_param_text11, &conf.pid[PIDALT].P_8, &__P,
-  &lcd_param_text12, &conf.pid[PIDALT].I_8, &__I,
+  &lcd_param_text11, &conf.pid[PIDALT].P8, &__P,
+  &lcd_param_text12, &conf.pid[PIDALT].I8, &__I,
   &lcd_param_text13, &conf.pid[PIDALT].D_8, &__D,
-  &lcd_param_text14, &conf.pid[PIDVEL].P_8, &__P,
-  &lcd_param_text15, &conf.pid[PIDVEL].I_8, &__I,
+  &lcd_param_text14, &conf.pid[PIDVEL].P8, &__P,
+  &lcd_param_text15, &conf.pid[PIDVEL].I8, &__I,
   &lcd_param_text16, &conf.pid[PIDVEL].D_8, &__D,
 #endif
-  &lcd_param_text17, &conf.pid[PIDLEVEL].P_8, &__P,
-  &lcd_param_text18, &conf.pid[PIDLEVEL].I_8, &__I,
+  &lcd_param_text17, &conf.pid[PIDLEVEL].P8, &__P,
+  &lcd_param_text18, &conf.pid[PIDLEVEL].I8, &__I,
   &lcd_param_text188, &conf.pid[PIDLEVEL].D_8, &__D,
 #if MAG
-  &lcd_param_text19, &conf.pid[PIDMAG].P_8, &__P,
+  &lcd_param_text19, &conf.pid[PIDMAG].P8, &__P,
 #endif
   &lcd_param_text20t, &conf.thrMid8, &__RC,
   &lcd_param_text21t, &conf.thrExpo8, &__RC,
@@ -1163,13 +1145,13 @@ PROGMEM const void * const lcd_param_ptr_table [] = {
   &lcd_param_text23, &conf.yawRate, &__RC,
   &lcd_param_text24, &conf.dynThrPID, &__RC,
 #if GPS
- &lcd_param_text91, &conf.pid[PIDPOS].P_8 , &__RC,
- &lcd_param_text92, &conf.pid[PIDPOS].I_8 , &__I,
- &lcd_param_text93, &conf.pid[PIDPOSR].P_8, &__P,
- &lcd_param_text94, &conf.pid[PIDPOSR].I_8, &__I,
+ &lcd_param_text91, &conf.pid[PIDPOS].P8 , &__RC,
+ &lcd_param_text92, &conf.pid[PIDPOS].I8 , &__I,
+ &lcd_param_text93, &conf.pid[PIDPOSR].P8, &__P,
+ &lcd_param_text94, &conf.pid[PIDPOSR].I8, &__I,
  &lcd_param_text95, &conf.pid[PIDPOSR].D_8, &__I,
- &lcd_param_text96, &conf.pid[PIDNAVR].P_8, &__P,
- &lcd_param_text97, &conf.pid[PIDNAVR].I_8, &__RC,
+ &lcd_param_text96, &conf.pid[PIDNAVR].P8, &__P,
+ &lcd_param_text97, &conf.pid[PIDNAVR].I8, &__RC,
  &lcd_param_text98, &conf.pid[PIDNAVR].D_8, &__I,
 #endif
 #ifdef LCD_CONF_AUX
@@ -1251,7 +1233,7 @@ PROGMEM const void * const lcd_param_ptr_table [] = {
       &lcd_param_text49, &conf.activate[BOXGPSHOLD], &__AUX4,
     #endif
   #endif
-  #if defined(FIXEDWING) || defined(HELICOPTER)
+  #if defined(FIXEDWING)
     &lcd_param_text50, &conf.activate[BOXPASSTHRU],&__AUX1,
     #ifndef SUPPRESS_LCD_CONF_AUX2
       &lcd_param_text50, &conf.activate[BOXPASSTHRU],&__AUX2,
@@ -1364,16 +1346,6 @@ PROGMEM const void * const lcd_param_ptr_table [] = {
   &lcd_param_text153, &conf.servoConf[5].max, &__SE,
   &lcd_param_text38, &conf.servoConf[5].middle, &__SE,
   &lcd_param_text39, &conf.servoConf[5].rate, &__BITS,
-#endif
-#ifdef HELI_120_CCPM
-  &lcd_param_text73, &conf.servoConf[3].middle, &__SE,
-  &lcd_param_text74, &conf.servoConf[4].middle, &__SE,
-  &lcd_param_text76, &conf.servoConf[6].middle, &__SE,
-  &lcd_param_text75, &conf.servoConf[5].middle, &__SE,
-  &lcd_param_text140, &conf.servoConf[3].rate, &__BITS,
-  &lcd_param_text141, &conf.servoConf[4].rate, &__BITS,
-  &lcd_param_text143, &conf.servoConf[6].rate, &__BITS,
-  &lcd_param_text142, &conf.servoConf[5].rate, &__BITS,
 #endif
 #ifdef GOVERNOR_P
   &lcd_param_text133, &conf.governorP, &__D,
@@ -1615,17 +1587,12 @@ void configurationLoop() {
       refreshLCD = 1;
       lcd_param_def_t* deft = (lcd_param_def_t*)pgm_read_word(&(lcd_param_ptr_table[(p * 3) + 2]));
       deft->type->inc((void*)pgm_read_word(&(lcd_param_ptr_table[(p * 3) + 1])), -(IsHigh(THROTTLE) ? 10: 1) * deft->increment);
- 
-      /*
-      * D8 与 LGT 的 pins_arduino.h 宏定义冲突，改为 D_8.
-      * Dolphin 2023.12.06
-      // */
-      if (p == 0) conf.pid[PITCH].P_8 = conf.pid[ROLL].P_8;
+      if (p == 0) conf.pid[PITCH].P8 = conf.pid[ROLL].P8;
     } else if (key == LCD_VALUE_UP || (IsHigh(ROLL))) {
       refreshLCD = 1;
       lcd_param_def_t* deft = (lcd_param_def_t*)pgm_read_word(&(lcd_param_ptr_table[(p * 3) + 2]));
       deft->type->inc((void*)pgm_read_word(&(lcd_param_ptr_table[(p * 3) + 1])), +(IsHigh(THROTTLE) ? 10 : 1) * deft->increment);
-      if (p == 0) conf.pid[PITCH].P_8 = conf.pid[ROLL].P_8;
+      if (p == 0) conf.pid[PITCH].P8 = conf.pid[ROLL].P8;
     }
     #if defined(PRI_SERVO_TO)
       #define MAX_SERV 7
@@ -1634,9 +1601,6 @@ void configurationLoop() {
         #define MAX_SERV PRI_SERVO_TO
       #endif
       for(i=PRI_SERVO_FROM-1; i<MAX_SERV; i++) servo[i] = conf.servoConf[i].middle;
-      #if defined(HELICOPTER) && YAWMOTOR
-        servo[5] =  MINCOMMAND;
-      #endif  
       #if defined(TRI) && defined(MEGA_HW_PWM_SERVOS) && defined(MEGA)
         servo[3] = servo[5];
       #endif
@@ -1954,7 +1918,7 @@ static char checkboxitemNames[][4] = {
       "GHm",
       "GHd",
     #endif
-    #if defined(FIXEDWING) || defined(HELICOPTER)
+    #if defined(FIXEDWING)
       "Pas",
     #endif
     #if defined(BUZZER)

@@ -25,8 +25,8 @@
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#ifndef EEPROM_h
-#define EEPROM_h
+#ifndef LGT_EEPROM_h
+#define LGT_EEPROM_h
 
 #include <inttypes.h>
 #include <Arduino.h>
